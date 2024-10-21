@@ -1,0 +1,24 @@
+services:
+  drupal:
+    image: drupal:latest
+    container_name: drupal-vs
+    ports:
+      - 81:80
+    volumes:
+      - volumenDrupal:/var/www/html/
+    restart: always
+
+  db:
+    image: mysql:latest
+    container_name: mysql-vs
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_USER: vs
+      MYSQL_PASSWORD: vs
+      MYSQL_DATABASE: parte1
+    volumes:
+      - volumenSQL:/var/lib/mysql
+volumes:
+  volumenDrupal:
+  volumenSQL:
