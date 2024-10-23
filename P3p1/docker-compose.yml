@@ -11,7 +11,6 @@ services:
   db:
     image: mysql:latest
     container_name: mysql-vs
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_USER: vs
@@ -19,6 +18,7 @@ services:
       MYSQL_DATABASE: parte1
     volumes:
       - volumenSQL:/var/lib/mysql
+    restart: always
 volumes:
   volumenDrupal:
   volumenSQL:
