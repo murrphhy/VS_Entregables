@@ -1,18 +1,107 @@
+# Entrega Docker
+
+[TOC]
 
 
 
+## Explicación de la parte 1
 
-# Explicación de la parte 2
+### Enunciado
+1. Crear un fichero docker-compose.yml con dos servicios: drupal + mysql.
+2. Hacer que el servicio drupal utilice el puerto 81.
+3. Hacer que ambos contenedores usen volúmenes para persistir información.
+4. Comprobar que puede acceder a localhost:81 y mostrar la correcta
+configuración de Drupal.
+5. Borrar los contenedores, explicar y demostrar si la información persiste
+
+### Introducción Práctica 3 Parte 1
+
+En la primera parte de la práctica estamos creando un entorno donde se puede gestionar un sitio web basado en el servicio que nos proporciona Drupal, a raíz de una base de datos MySQL que es donde se guardará toda la información que la web necesite.
+
+Para ello lo hacemos mediante un archivo llamado `docker-compose.yml`, el cual nos ahorra gran parte del trabajo porque en vez de instalar manualmente estas dos herramientas de las que hemos hablado anteriormente, lo automatizamos de tal manera que nos crea "**contenedores**". Dichos contenedores cuentan con estas herramientas de manera independiente.
+
+Esto nos ahorra muchos quebraderos de cabeza, ya que configurando el archivo y sabiendo unos cuantos comandos en la terminal nos crea el entorno que queremos.
+
+Vamos a proceder a explicar el `docker-compose` de la primera parte de la práctica 3. Voy a adjuntar el código entero del docker-compose y luego a desglosarlo parte por parte.
+
+~~~
+services:
+  drupal:
+    image: drupal:latest
+    container_name: drupal-vs
+    ports:
+      - 81:80
+    volumes:
+      - volumenDrupal:/var/www/html/
+    restart: always
+
+  db:
+    image: mysql:latest
+    container_name: mysql-vs
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_USER: vs
+      MYSQL_PASSWORD: vs
+      MYSQL_DATABASE: parte1
+    volumes:
+      - volumenSQL:/var/lib/mysql
+    restart: always
+volumes:
+  volumenDrupal:
+  volumenSQL:
+~~~
+
+- Como podemos observar el archivo se divide en dos partes: la parte de servicios que vamos a usar y la de volúmenes que hemos declarado.
+
+### Servicios (Parte 1)
+
+Como se nos especifica en el enunciado vamos a usar en este caso dos servicios: `Drupal` y `MySQL`.
+
+- Drupal:
+
+    1. `image: drupal:latest` -> Indicamos que vamos a usar la última versión disponible de la imagen de Drupal en DH.
+    2. `container_name: drupal-vs` -> Le damos nombre al contenedor que vamos a crear, en este caso: drupal-vs
+    3. `ports:
+      - 81:80` -> Mapea el puerto 81 del host al 80 del contenedor. Elegimos el 81 porque es el que se nos especifica en el enunciado.
+    4. `volumes:
+      - volumenDrupal:/var/www/html/` -> Crea un volumen llamado ***"volumenDrupal"*** en el host el cual vinculamos al directorio ***/var/ww/html*** dentro del contenedor, que es donde se almacena el código de Drupal. Esto lo hacemos para que la información persista dado a que, en el apartado 5 del enunciado se nos pide que se borre los contenedores para ver si la información se mantiene.
+    5. `restart: always` -> Esta última línea indica que el contenedor se reiniciará en el caso de que haya algún fallo, o bien se detenga. Nos proporciona alta disponibilidad.
+
+- MySQL:
+
+    1. `image: mysql:latest` -> Seleccionamos el uso de la última versión disponible de la imagen de MySQL en DH.
+    2. `container_name: mysql-vs` -> Creamos un nombre para el contenedor en este caso será "mysql-vs".
+    3. `environment:
+        MYSQL_ROOT_PASSWORD: example
+        MYSQL_USER: vs
+        MYSQL_PASSWORD: vs
+        MYSQL_DATABASE: parte1` -> En las variables del entorno declaramos creamos una contraseña root de MySQL la cual en este caso es: ***example***, un usuario y contraseña para dicho usuario en el que hemos asignado a ambas ***vs***, y por último el nombre que va tener la base de datos una vez se inicie el contenedor: ***parte1***.
+    4. `volumes:
+      - volumenSQL:/var/lib/mysql` -> Creamos un volumen llamado ***volumenSQL*** en el host, el cual está vinculado con el directorio de MySQL donde se almacenan los datos: ***/var/lib/mysql***, por la misma razón que explicamos antes en el apartado de **Drupal**.
+    5. `restart: always` -> Mismo motivo que con el servicio de **Drupal**.
+
+### Volumes (Parte 1)
+
+~~~
+volumes:
+  volumenDrupal:
+  volumenSQL:
+~~~
+Aquí declaramos los volúmenes que hemos usado tanto en **Drupal** como en **MySQL**, para que toda la información persista por lo que si eliminamos o detenemos los contenedores creados los datos se mantendrán.
+
+
+
+## Explicación de la parte 2
 
 En esta sección se detallarán los aspectos importantes de la actividad, con el fin de aclarar lo que no se explica en el video.
-## Enunciado
+### Enunciado
 1. Crear un fichero docker-compose.yml con dos servicios: wordpress + mariadb.
 3. Hacer que el servicio wordpress utilice el puerto 82.
 4. Hacer que ambos contenedores usen una red llamada redDocker.
 5. Comprobar que puede acceder a localhost:82 y mostrar la correcta configuración de wordpress.
 5. Borrar los contenedores, explicar y demostrar si la información persiste.
 
-## docker-compose.yml
+### docker-compose.yml
 En este apartado se desgranarán las diferentes secciones del `docker-compose`. 
 
 ``` yaml
@@ -47,7 +136,7 @@ networks:
   redDocker:
 ```
 
-### `services`
+#### `services`
 El `docker-compose` nos presenta dos servicios:
 - `wordpress`: un contenedor con la última versión disponible de la imagen de wordpress.
 - `database`: un contenedor con una imagen `mariadb` como base de datos.
@@ -58,14 +147,14 @@ Dentro de estos servicios se han establecido las siguientes propiedades:
 - `ports`.
 - `enviroment`.
 
-#### `networks`
+##### `networks`
 En ambos contenedores se asignará una misma red, requerida por el ejercicio, la cual se denomina `redDocker` y permite la correcta comunicación entre ambos contenedores.
 
-#### `ports`
+##### `ports`
 Se asignan los puertos oportunos a los contenedores. En el caso del `wordpress`, se le asigna el 82 del host, puesto que es un requisito del ejercicio, y el 80 al puerto del contenedor, pues es el 80 el predeterminado de `wordpress`. 
 En el contenedor con la base de datos, se les asigna, tanto al puerto de la máquina como al del contenedor el puerto 3306, ya que este es el predeterminado para bases de datos.
 
-#### `environment`
+##### `environment`
 Este apartado detalla las distintas variables de entorno necesarias para garantizar el correcto funcionamiento y sincronización de los contenedores. Como se observa, estas credenciales no se encuentran _hardcodeadas_, lo cual añade una capa adicional de seguridad a nuestra infraestructura, especialmente importante para futuras subidas a sistemas de control de versiones como GitHub.
 Estas variables estarán guardadas en un archivo oculto con nombre `env`, cuyo contenido será el siguiente:
 
@@ -85,10 +174,10 @@ Por último, añadir varias apuntes necesarios sobre las variables de entorno:
 - `WORDPRESS_DB_USER` y `WORDPRESS_DB_PASSWORD` han de ser igual que `MARIADB_USER` y `MARIADB_PASSWORD`. ya que hace referencia al mismo usuario.
 - `WORDPRESS_DB_HOST` hace referencia al host de la base de datos, en el caso de una infraestructura dockerizada, se refiere el nombre del servicio, es decir, `database`.
 
-### networks
+#### `networks`
 En esta última sección, es necesario definir las distintas redes que hemos creado para nuestra infraestructura. En nuestro caso, y como requisito de la práctica, hemos creado una red llamada `redDocker` la cual permite una correcta comunicación entre los diferentes contenedores.
 
-## Archivos de configuración de wordpress
+### Archivos de configuración de wordpress
 Para acceder a estos archivos, necesitamos entrar en el contenedor de `wordpress`. Esto se logra con el comando `docker exec -it <nombre_contenedor> /bin/bash`, en nuestro caso quedaría de la siguiente manera:
 - `docker exec -it wordpress_VS /bin/bash`
 Una vez dentro del contenedor, haciendo un `ls` podremos ver los diferentes archivos de configuración de `wordpress`. El que nos interesa ahora mismo es `wp-config.php`. 
@@ -267,4 +356,44 @@ PHP_ASC_URL=https://www.php.net/distributions/php-8.2.25.tar.xz.asc
 PHP_CPPFLAGS=-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 _=/usr/bin/env
 ```
+
+### Persistencia de datos
+
+Nuestra infraestructura, al no tener volúmenes montados, no tendrá persistencia de datos, esto es, una vez apaguemos los contenedores, la información de estos se perderá y, aunque los levantemos de nuevo, volveremos a empezar desde 0, como si fuese la primera vez que levantamos los contenedores.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
