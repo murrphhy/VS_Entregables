@@ -1,0 +1,29 @@
+services:
+  wordpress:
+    image: wordpress
+    container_name: wordpress_VS
+    networks:
+      - redDocker
+    ports:
+      - 82:80
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+  
+  database:
+    image: mariadb
+    container_name: mariadb_VS
+    networks:
+      - redDocker
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+
+networks:
+  redDocker:
