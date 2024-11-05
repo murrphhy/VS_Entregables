@@ -2,6 +2,11 @@
 
 [TOC]
 
+Relizado por:
+
+- David Massa Gallego (parte 1).
+- Julio Martín García (parte 2).
+
 
 
 ## Explicación de la parte 1
