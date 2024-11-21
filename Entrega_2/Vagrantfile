@@ -1,0 +1,7 @@
+Vagrant.configure("2") do |config|
+  config.vm.define "entrega2-vs" do |vm_config|
+    vm_config.vm.hostname = "entrega2-vs"
+    vm_config.vm.box = "ubuntu/focal64"
+    vm_config.vm.provision "shell", path: "provisioning/entrega2_VS.sh"
+  end
+end
