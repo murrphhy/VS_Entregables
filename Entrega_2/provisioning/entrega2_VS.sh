@@ -27,7 +27,3 @@ sudo mv ./kind /usr/local/bin/kind
     # Comprobación de la instalación de Kind
     kind version
 
-# Creación del cluster (kubectl)
-kind create cluster --name cluster-entrega2
-    # Comprobación de la instalación del cluster
-    docker ps
