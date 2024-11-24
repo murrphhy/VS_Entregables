@@ -24,6 +24,13 @@ sudo apt-get update -y && sudo apt-get upgrade -y
 chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
 
-    # Comprobación de la instalación de Kind
-    kind version
+# Comprobación de la instalación de Kind
+kind version
 
+# Instalación de kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/kubectl
+
+# Verificar la instalación de kubectl
+kubectl version --client --output=yaml
