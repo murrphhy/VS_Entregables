@@ -1,10 +1,20 @@
 Vagrant.configure("2") do |config|
   config.vm.define "entrega2-vs" do |vm_config|
+    # Configuración básica de la máquina virtual
     vm_config.vm.hostname = "entrega2-vs"
     vm_config.vm.box = "ubuntu/focal64"
     vm_config.vm.provision "shell", path: "provisioning/entrega2_VS.sh"
 
+    #Abrimos el puerto que usamos en la máquina de Vagrant
+    config.vm.network "forwarded_port", guest: 8080, host: 8080
+
     # Sincronizar carpeta con los .yaml a la máquina de vagrant
     vm_config.vm.synced_folder "./files", "/home/vagrant/files"
+
+    # Configuración de recursos
+    vm_config.vm.provider "virtualbox" do |vb|
+      vb.memory = "4096" # Incrementa la memoria a 4 GB
+      vb.cpus = 2        # Incrementa el número de CPUs a 2
+    end
   end
 end
