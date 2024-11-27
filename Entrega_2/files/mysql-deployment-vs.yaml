@@ -16,13 +16,25 @@ spec:
         image: mysql:latest
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "example"
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
         - name: MYSQL_DATABASE
-          value: "drupal"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_DATABASE
         - name: MYSQL_USER
-          value: "vs"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_USER
         - name: MYSQL_PASSWORD
-          value: "vs"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_PASSWORD
         ports:
         - containerPort: 3306
         volumeMounts:
@@ -32,4 +44,3 @@ spec:
       - name: mysql-data-vs
         persistentVolumeClaim:
           claimName: mysql-pvc
-
