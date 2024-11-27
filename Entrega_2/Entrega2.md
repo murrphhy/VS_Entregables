@@ -440,6 +440,10 @@ volumes:
 - **volumes.persistentVolumeClaim**: Conecta este volumen a un PersistentVolumeClaim (PVC).
   - **volumes.claimName**: Nombre del PVC (drupal-pvc) que gestiona el almacenamiento. Gracias a esto nuestros datos serán duraderos.
 
+**IMPORTANTE**
+
+Hay consenso de que **/var/www/html/modules**, **/var/www/html/profiles**, y **/var/www/html/themes** son cosas que generalmente deberían ser volúmenes (y podría tener un volumen declarado individual para cada cosa para un futuro proyecto a gran escala) pero la ruta de ***/var/www/html/sites/default*** es algo más complejo, ya que los contenidos de ese directorio sí necesitan ser inicializados con los contenidos de la imagen. Es en donde verdaderamente tenemos que coger los archivos de configuración que se nos exigen, para que la instalación de Drupal sea exitosa, y dado que al fin y al cabo es un proyecto pequeño/mediano hemos decidido simplemente tener un volumen para **/sites/default**
+
 #### mysql-deployment-vs.yaml
 
 ~~~
