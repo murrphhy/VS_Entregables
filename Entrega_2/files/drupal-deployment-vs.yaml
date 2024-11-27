@@ -17,18 +17,16 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
+          #Crea directorio si no existe
           if [ ! -d /var/www/html/sites/default/files ]; then
-            echo "Creando directorio /var/www/html/sites/default/files..."
             mkdir -p /var/www/html/sites/default/files
           fi
-
+          #Copia archivo settings.php si no existe
           if [ ! -f "/var/www/html/sites/default/default.settings.php" ]; then
-            echo "Copiando archivo default.settings.php..."
             cp /opt/drupal/web/core/assets/scaffold/files/default.settings.php /var/www/html/sites/default/default.settings.php
           fi
-
+          #Crea settings.php desde default.settings.php y configuramos variables de entorno de la configuración de la BD
           if [ ! -f "/var/www/html/sites/default/settings.php" ]; then
-            echo "Creando settings.php desde default.settings.php..."
             cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
 
             echo "Añadiendo configuración automática al settings.php..."
@@ -43,17 +41,16 @@ spec:
             'driver' => 'mysql',
             'prefix' => '',
           );
-
+          
+          #Activamos los Trusted Host Settings, para evitar errores en Drupal.
           \$settings['trusted_host_patterns'] = array(
-            '^.*$',
+            '^.*$', #Aquí tendría que ir los dominios que usaría nuestro sitio web.
           );
 
-          \$settings['install_profile'] = 'standard';
-
           EOL
-                    fi
+          fi
 
-                    chmod 777 -R /var/www/html/sites/default
+          chmod 777 -R /var/www/html/sites/default
         volumeMounts:
         - name: drupal-data-vs
           mountPath: /var/www/html/sites/default

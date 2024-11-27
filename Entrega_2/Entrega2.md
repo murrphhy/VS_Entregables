@@ -543,8 +543,9 @@ DRUPAL_ACCOUNT_PASS=vs
 DRUPAL_ACCOUNT_MAIL=pruebaVScuenta@example.com
 ~~~
 La usamos gracias a configMap por un comando el cual es el siguiente: `kubectl create configmap drupal-env-config --from-env-file=.env` .
-- Hemos conseguido implementar las variables del entorno para la configuración de la base de datos. Sin embargo, para el resto de la configuración nos ha dado problemas, los cuales se han intentado solventar desde que empezó a hacer la entrega hasta el último día.
-- Gracias a la profunda investigación que se ha hecho de esto, hemos conseguido dar con la herramienta llamada **Drush** la cual es una herramienta de línea de comandos ampliamente usada para gestionar sitios web basados en Drupal. Creemos que con esto se podría implementar las variables del entorno restantes, y así ahorrarnos la instalación web entera de Drupal, pero ha provocado muchos fallos a la hora de implementarlo con Kubernetes.
+- Hemos conseguido implementar las variables del entorno para la configuración de la base de datos. Sin embargo, para el resto de la configuración nos ha dado problemas, los cuales se han intentado solventar hasta el final.
+- Gracias a la profunda investigación que se ha hecho de esto, hemos conseguido dar con la herramienta llamada **Drush** la cual es una herramienta de línea de comandos ampliamente usada para gestionar sitios web basados en Drupal.
+Creemos que con esto se podría implementar las variables del entorno restantes, y así ahorrarnos la instalación web entera de Drupal, pero ha provocado muchos fallos a la hora de implementarlo con Kubernetes.
 
 
 ##### Bibliografía
