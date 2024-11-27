@@ -751,9 +751,9 @@ DRUPAL_ACCOUNT_MAIL=pruebaVScuenta@example.com
 ~~~
 La usamos gracias a configMap por un comando el cual es el siguiente: `kubectl create configmap drupal-env-config --from-env-file=.env` .
 Con este comando creamos un configMap a raíz de el archivo oculto de entorno de variables que explicamos.
-- Hemos conseguido implementar las variables del entorno para la configuración de la base de datos.
+- Hemos conseguido implementar las variables del entorno para la configuración de la base de datos durante la instalación de Drupal y así conseguimos más eficiencia.
 - Gracias a la profunda investigación que se ha hecho de esto, hemos conseguido dar con la herramienta llamada **Drush** la cual es una herramienta de línea de comandos ampliamente usada para gestionar sitios web basados en Drupal.
-Creemos que con esto se podría implementar las variables del entorno restantes, y así hacer una instalación web automatizada de Drupal, pero ha provocado muchos fallos a la hora de implementarlo con Kubernetes. Aún así no tenemos la certeza de que esto fuera cierto, pero intuimos que podría ser.
+Quizás con esta herramienta se podría mejorar un poco más la automatización de la instalación de Drupal en el instalador web, pero ha provocado muchos fallos a la hora de implementarlo con Kubernetes. Aún así no tenemos la certeza de que esto fuera cierto, pero intuimos que podría ser.
 ***
 
 ## Conceptos aprendidos en este entregable
