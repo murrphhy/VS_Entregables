@@ -1,6 +1,30 @@
 # Entrega Docker
 
-[TOC]
+- [Entrega Docker](#entrega-docker)
+- [Explicación Entrega 2](#explicación-entrega-2)
+      - [Enunciado](#enunciado)
+    - [Introducción Entregable 2](#introducción-entregable-2)
+    - [Explicación Vagrantfile](#explicación-vagrantfile)
+      - [Explicación Script de aprovisionamiento](#explicación-script-de-aprovisionamiento)
+    - [Explicación clúster de configuramiento.](#explicación-clúster-de-configuramiento)
+    - [Explicación deployments implementados.](#explicación-deployments-implementados)
+      - [drupal-deployment-vs.yaml](#drupal-deployment-vsyaml)
+      - [mysql-deployment-vs.yaml](#mysql-deployment-vsyaml)
+        - [Explicación configMap (mysql-config.yaml)](#explicación-configmap-mysql-configyaml)
+        - [Explicación secret (mysql-secret.yaml)](#explicación-secret-mysql-secretyaml)
+    - [Explicación servicios implementados](#explicación-servicios-implementados)
+      - [drupal-service-vs.yaml](#drupal-service-vsyaml)
+      - [mysql-service-vs.yaml](#mysql-service-vsyaml)
+    - [Explicación PVCs implementados](#explicación-pvcs-implementados)
+      - [drupal-pvc.yaml](#drupal-pvcyaml)
+      - [mysql-pvc.yaml](#mysql-pvcyaml)
+        - [Explicación script.sh](#explicación-scriptsh)
+        - [Explicación .env (variables del entorno)](#explicación-env-variables-del-entorno)
+  - [Conceptos aprendidos en este entregable](#conceptos-aprendidos-en-este-entregable)
+          - [Explicación configMap de Kubernetes](#explicación-configmap-de-kubernetes)
+          - [Explicación Secrets de Kubernetes](#explicación-secrets-de-kubernetes)
+        - [Bibliografía](#bibliografía)
+
 
 Relizado por:
 
@@ -30,7 +54,7 @@ En este entregable vamos a proceder a crear una máquina virtual con vagrant uti
 2. Para la base de datos con MySQL
 
 Una vez creado, podremos acceder a nuestro http://localhost:8085 como se nos exige en el enunciado y podremos disfrutar de los servicios que nos ofrece Drupal. Cuando lo configuremos y estemos ya dentro los eliminaremos para probar la persistencia de datos.
-
+***
 
 ### Explicación Vagrantfile
 
@@ -95,7 +119,7 @@ vm_config.vm.provider "virtualbox" do |vb|
 - Configuramos los recursos que nos harán falta en la máquina virtual.
 - `vb.memory = "4096"`: Asignamos 4GB de RAM.
 - `vb.cpus = 2`: Asignamos 2 CPUs.
-
+***
 #### Explicación Script de aprovisionamiento
 
 - Aunque en el enunciado sólo se nos exige la instalación de Docker, también hemos procedido a meter en el Script de aprovisionamiento la instalación tanto de **kind** como de **Kubectl**.
@@ -187,6 +211,7 @@ kubectl version --client --output=yaml
 ~~~
 Instalamos kubectl en nuestra máquina de Vagrant. Posteriormente a esto, verificamos que la instalación se ha realizado con éxito.
 Gracias a esto podremos interactuar con los clústeres de Kubernetes.
+***
 ### Explicación clúster de configuramiento.
 ~~~
 kind: Cluster
@@ -198,6 +223,14 @@ nodes:
         hostPort: 8085
         protocol: TCP
 ~~~
+Este archivo configura un clúster local de Kubernetes utilizando Kind (Kubernetes in Docker).
+- **kind: Cluster**: Indica que va ser un clúster de Kind.
+- `apiVersion: kind.x-k8s.io/v1alpha4`: Especificamos la versión de API de configuración de Kind
+- **nodes.role: control-plane**: Este nodo se define como nodo maestro, que será el encargado de la configuración del clúster.
+- **nodes.role.extraPortMappings.containerPort: 30010**: Es el puerto dentro del nodo de Kubernetes que queremos exponer. En este caso lo usamos para exponer Drupal y poder acceder a este. Lo veremos más tarde cuando expliquemos el servicio de Drupal.
+- **nodes.role.extraPortMappings.hostPort: 8085**: Es el puerto de nuestra máquina host que estará enlazado al puerto 30010 del nodo. Cuando accedemos a **localhost:8085** estamos redirigiéndonos al puerto 30010 del nodo, que es donde se encuentra el servicio de Drupal.
+- **nodes.role.extraPortMappings.protocol: TCP**: Es el protocolo por excelencia para servicios webs y APIs.
+***
 ### Explicación deployments implementados.
 
 #### drupal-deployment-vs.yaml
@@ -221,18 +254,16 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
+          #Crea directorio si no existe
           if [ ! -d /var/www/html/sites/default/files ]; then
-            echo "Creando directorio /var/www/html/sites/default/files..."
             mkdir -p /var/www/html/sites/default/files
           fi
-
+          #Copia archivo settings.php si no existe
           if [ ! -f "/var/www/html/sites/default/default.settings.php" ]; then
-            echo "Copiando archivo default.settings.php..."
             cp /opt/drupal/web/core/assets/scaffold/files/default.settings.php /var/www/html/sites/default/default.settings.php
           fi
-
+          #Crea settings.php desde default.settings.php y configuramos variables de entorno de la configuración de la BD
           if [ ! -f "/var/www/html/sites/default/settings.php" ]; then
-            echo "Creando settings.php desde default.settings.php..."
             cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
 
             echo "Añadiendo configuración automática al settings.php..."
@@ -247,17 +278,16 @@ spec:
             'driver' => 'mysql',
             'prefix' => '',
           );
-
+          
+          #Activamos los Trusted Host Settings, para evitar errores en Drupal.
           \$settings['trusted_host_patterns'] = array(
-            '^.*$',
+            '^.*$', #Aquí tendría que ir los dominios que usaría nuestro sitio web.
           );
 
-          \$settings['install_profile'] = 'standard';
-
           EOL
-                    fi
+          fi
 
-                    chmod 777 -R /var/www/html/sites/default
+          chmod 777 -R /var/www/html/sites/default
         volumeMounts:
         - name: drupal-data-vs
           mountPath: /var/www/html/sites/default
@@ -276,7 +306,6 @@ spec:
       - name: drupal-data-vs
         persistentVolumeClaim:
           claimName: drupal-pvc
-
 ~~~
 1. 
 ~~~
@@ -296,7 +325,7 @@ spec:
 
 - **kind**: tipo de recurso (Deployment).
 - **apiVersion**: versión de este tipo de recurso (apps/v1).
-- **metadata.name**: recurso específico (drupal).
+- **metadata.name**: nombre del despliegue (drupal-deployment-vs).
 - **selector.matchLabels**: selecciona aquellos Pods con una etiqueta (app:drupal) para que pertenezcan a este Deployment.
 - **template.metadata.labels**: etiqueta (app:drupal) para los Pods que envuelven tu contenedor.
 2. 
@@ -308,18 +337,16 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - |
+          #Crea directorio si no existe
           if [ ! -d /var/www/html/sites/default/files ]; then
-            echo "Creando directorio /var/www/html/sites/default/files..."
             mkdir -p /var/www/html/sites/default/files
           fi
-
+          #Copia archivo settings.php si no existe
           if [ ! -f "/var/www/html/sites/default/default.settings.php" ]; then
-            echo "Copiando archivo default.settings.php..."
             cp /opt/drupal/web/core/assets/scaffold/files/default.settings.php /var/www/html/sites/default/default.settings.php
           fi
-
+          #Crea settings.php desde default.settings.php y configuramos variables de entorno de la configuración de la BD
           if [ ! -f "/var/www/html/sites/default/settings.php" ]; then
-            echo "Creando settings.php desde default.settings.php..."
             cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
 
             echo "Añadiendo configuración automática al settings.php..."
@@ -334,17 +361,16 @@ spec:
             'driver' => 'mysql',
             'prefix' => '',
           );
-
+          
+          #Activamos los Trusted Host Settings, para evitar errores en Drupal.
           \$settings['trusted_host_patterns'] = array(
-            '^.*$',
+            '^.*$', #Aquí tendría que ir los dominios que usaría nuestro sitio web.
           );
 
-          \$settings['install_profile'] = 'standard';
-
           EOL
-                    fi
+          fi
 
-                    chmod 777 -R /var/www/html/sites/default
+          chmod 777 -R /var/www/html/sites/default
         volumeMounts:
         - name: drupal-data-vs
           mountPath: /var/www/html/sites/default
@@ -363,7 +389,7 @@ spec:
   - **Copia de archivos predeterminados**: Si el archivo **default.settings.php** no existe, se copia desde la ubicación de recursos predeterminada de Drupal.
   - **Creación del archivo settings.php**:
     - Copia **default.settings.php** como **settings.php** si no existe.
-    - Añade configuraciones automáticas al final del archivo **settings.php** para definir la base de datos y otros ajustes (como patrones de host de confianza y el perfil de instalación).
+    - Añade configuraciones automáticas al final del archivo **settings.php** para definir la base de datos y otros ajustes (como patrones de host de confianza).
 
 - **chmod 777 -R /var/www/html/sites/default**: Cambia los permisos del directorio **sites/default** y sus contenidos. Esto puede provocar que luego salga un warning en Drupal en el caso de que lanzáramos la aplicación de forma real podríamos reconfigurar los permisos para quitarles y así nos quitaríamos el warning del cual se nos avisa.
 
@@ -414,13 +440,6 @@ volumes:
 - **volumes.persistentVolumeClaim**: Conecta este volumen a un PersistentVolumeClaim (PVC).
   - **volumes.claimName**: Nombre del PVC (drupal-pvc) que gestiona el almacenamiento. Gracias a esto nuestros datos serán duraderos.
 
-
-###### Explicación configMap de Kubernetes
-
-Un configmap es un objeto de la API utilizado para almacenar datos no confidenciales en el formato clave-valor. Los Pods pueden utilizar los ConfigMaps como variables de entorno, argumentos de la linea de comandos o como ficheros de configuración en un Volumen.
-
-Un ConfigMap te permite desacoplar la configuración de un entorno específico de una imagen de contenedor, así las aplicaciones son fácilmente portables.
-
 #### mysql-deployment-vs.yaml
 
 ~~~
@@ -442,13 +461,25 @@ spec:
         image: mysql:latest
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "example"
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
         - name: MYSQL_DATABASE
-          value: "drupal"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_DATABASE
         - name: MYSQL_USER
-          value: "vs"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_USER
         - name: MYSQL_PASSWORD
-          value: "vs"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_PASSWORD
         ports:
         - containerPort: 3306
         volumeMounts:
@@ -458,10 +489,131 @@ spec:
       - name: mysql-data-vs
         persistentVolumeClaim:
           claimName: mysql-pvc
+
 ~~~
 
-### Explicación servicios implementados
+1. 
+~~~
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment-vs
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+~~~
+- **kind**: tipo de recurso (Deployment).
+- **apiVersion**: versión de este tipo de recurso (apps/v1).
+- **metadata.name**: nombre del despliegue en cuestión (mysql-deployment-vs).
+- **selector.matchLabels**: selecciona aquellos Pods con una etiqueta (app:mysql) para que pertenezcan a este Deployment.
+- **template.metadata.labels**: etiqueta (app:mysql) para los Pods que envuelven tu contenedor.
 
+2. 
+
+~~~
+spec:
+      containers:
+      - name: mysql
+        image: mysql:latest
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_DATABASE
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-config
+              key: MYSQL_PASSWORD
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-data-vs
+          mountPath: /var/lib/mysql
+~~~
+
+- **spec.containers.image**: Indica que se usará la última versión disponible de la imagen oficial de MySQL.
+
+- **spec.containers.env**: Se define una lista de variables de entorno requeridas por MySQL para su configuración:
+
+  - **MYSQL_ROOT_PASSWORD**: Define la contraseña del usuario root de MySQL.
+    - **valueFrom.secretKeyRef**: Se toma el valor desde un Secret.
+    - **name:mysql-secret**: Nombre del Secret que contiene la contraseña.
+    - **key: MYSQL_ROOT_PASSWORD**: Clave específica dentro del Secret.
+
+  - **MYSQL_DATABASE**: Nombre de la base de datos que se creará.
+    - **valueFrom.configMapKeyRef**:Se toma el valor desde un ConfigMap.
+    - **name: mysql-config**: Nombre del ConfigMap.
+    - **key: MYSQL_DATABASE**: Clave específica dentro del ConfigMap.
+
+  - **MYSQL_USER**: Nombre del usuario que se creará en la base de datos.
+    - **valueFrom.configMapKeyRef**:Se toma el valor desde un ConfigMap.
+    - **name**: mysql-config.
+    - **key**: MYSQL_USER.
+
+  - **MYSQL_PASSWORD**: Contraseña para el usuario definido anteriormente.
+    - **valueFrom.configMapKeyRef**: Se toma el valor desde un ConfigMap.
+    - **name**: mysql-config.
+    - **key**: MYSQL_PASSWORD.
+
+- **spec.containers.ports**: Especifica el puerto del contenedor, en este caso es el predeterminado por mySQL.
+
+- **spec.containers.volumeMounts**: Conecta un volumen persistente al contenedor para almacenar datos de MySQL de forma persistente.
+3. 
+~~~
+volumes:
+      - name: mysql-data-vs
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+~~~
+- **spec.volumes.name**: Nombre del volumen (mysql-data-vs).
+
+- **volumes.persistentVolumeClaim**: Conecta este volumen a un PersistentVolumeClaim (PVC).
+  - **volumes.claimName**: Nombre del PVC (mysql-pvc) que gestiona el almacenamiento. Gracias a esto nuestros datos serán duraderos.
+
+##### Explicación configMap (mysql-config.yaml)
+~~~
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+data:
+  MYSQL_DATABASE: drupal
+  MYSQL_USER: vs
+  MYSQL_PASSWORD: vs
+~~~
+
+- Hemos creado un configMap para las variables de entorno de mysql, así podemos evitar que se hardcodeen credenciales y es una buena práctica que siempre tendríamos que implementar para mejorar la seguridad de lo que estemos desarrollando.
+
+##### Explicación secret (mysql-secret.yaml)
+~~~
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: example
+~~~
+- Una explicación similar a la anterior, lo único que los **secret** lo usamos explícitamente para guardar información sensible. En este caso, solo hemos guardado la contraseña Root de la BD. Igual que evitamos hardcodear credenciales como hemos mencionado previamente, en este caso contamos con un plus extra y es que, aunque los datos no estén cifrados en un archivo **secret** se almacenan en base64 lo que evita la lectura directa.
+***
+### Explicación servicios implementados
 #### drupal-service-vs.yaml
 ~~~
 apiVersion: v1
@@ -477,6 +629,14 @@ spec:
   selector:
     app: drupal
 ~~~
+
+- Dado a que los archivos de ahora en adelante no son tan extensos, en vez de desglosarlos vamos a hacer una explicación general de lo realmente importante.
+- En este caso creamos un servicio que nos permite exponer aplicaciones que se ejecutan en Pods para que puedan ser accesibles dentro o fuera del clúster. En este caso contamos con que estamos exponiendo una aplicación de Drupal que es la que se nos exige en el enunciado.
+- Es importante destacar que el tipo de servicio con el que contamos es **NodePort** lo que nos permite que la aplicación sea accesible desde fuera del clúster mediante el puerto de los nodos que van entre 30000–32767. En este caso hemos elegido el 30010.
+- El puerto 80, es el puerto interno del servicio el cual será accesible dentro del clúster
+- EL nodePort es 30010 que es el puerto que usaremos para exponer el servicio en cada nodo del clúster.
+
+
 #### mysql-service-vs.yaml
 ~~~
 apiVersion: v1
@@ -491,6 +651,13 @@ spec:
   selector:
     app: mysql
 ~~~
+
+- Este archivo **.yaml** está exclusivamente diseñado para exponer una base de datos MySQL únicamente dentro del clúster
+- Es importante destacar que el tipo de servicio con el que contamos es **ClusterIP**, es el que viene por defecto con kubernetes. No nos interesa exponerlo fuera con **NodePort** ya que en este caso no queremos exponer la BD fuera del clúster.
+- El puerto 3306, es el puerto interno del servicio el cual será accesible dentro del clúster. Es el puerto predeterminado de MySQL, lo que facilita la conexión entre los Pods internos del clúster.
+
+
+***
 ### Explicación PVCs implementados
 
 #### drupal-pvc.yaml
@@ -506,6 +673,10 @@ spec:
     requests:
       storage: 2Gi
 ~~~
+- En este archivo creamos un PVC que es una solicitud de almacenamiento persistente el cual va ser utilizada en este caso por nuestro pod de Drupal, para que persista la información, lo cual nos permita que si borramos un pod los datos sigan ahí.
+- Gracias a **ReadWriteOnce** nos permite que el volumen sea montado como lectura y escritura por un único nodo.
+- Al final del archivo podemos ver como solicitamos **2Gi** de almacenamiento persistente del clúster
+
 #### mysql-pvc.yaml
 ~~~
 apiVersion: v1
@@ -519,10 +690,16 @@ spec:
     requests:
       storage: 2Gi
 ~~~
+
+- La misma explicación de antes en todos los aspectos, sólo que en este caso persistirán la información de la BD la cual es MySQL como bien sabemos.
+
+***
 ##### Explicación script.sh
 ~~~
 #!/bin/bash
 kubectl create configmap drupal-env-config --from-env-file=.env
+kubectl apply -f mysql-secret.yaml
+kubectl apply -f mysql-config.yaml
 kubectl apply -f drupal-pvc.yaml
 kubectl apply -f mysql-pvc.yaml
 kubectl apply -f drupal-deployment-vs.yaml
@@ -530,6 +707,36 @@ kubectl apply -f mysql-deployment-vs.yaml
 kubectl apply -f drupal-service-vs.yaml
 kubectl apply -f mysql-service-vs.yaml
 ~~~
+
+Dado a que se han sometido muchísimas pruebas para llevar acabo esta pŕactica y que todo finalmente fuera bien, diseñamos un script para ahorrarnos tiempo a la hora de ir haciendo pruebas dado a que continuamente se modificaban algo del los archivos **.yaml**. Gracias a este script hemos podido ahorrarnos tiempo y ser más eficientes.
+
+Aquí contamos con todos los comandos necesarios para que podamos desplegar todo lo preparado con Kubernetes.
+- `kubectl create configmap drupal-env-config --from-env-file=.env` : Comando para crear un configMap de Drupal a raíz del archivo .env donde almacenamos las variables del entorno.
+- `kubectl apply -f mysql-secret.yaml`: Comando para crear el secret de mySQL.
+- `kubectl apply -f mysql-config.yaml`: Comando para crear el configMap de las variables del entorno de mySQL.
+***Desplegar volumenes persistentes***
+~~~
+kubectl apply -f drupal-pvc.yaml
+kubectl apply -f mysql-pvc.yaml
+~~~
+- Desplegamos volúmenes persistentes de drupal y mysql.
+
+***Desplegar deployments***
+~~~
+kubectl apply -f drupal-deployment-vs.yaml
+kubectl apply -f mysql-deployment-vs.yaml
+~~~
+- Desplegamos deployments de drupal y mysql.
+
+***Desplegar servicios***
+~~~
+kubectl apply -f drupal-service-vs.yaml
+kubectl apply -f mysql-service-vs.yaml
+~~~
+- Desplegamos servicios de drupal y mysql.
+
+Suponiendo que introdujeramos los comandos línea por línea, tendríamos que seguir estrictamente el que usamos en el script.
+***
 ##### Explicación .env (variables del entorno)
 ~~~
 DRUPAL_DB_HOST=mysql-service-vs
@@ -543,16 +750,32 @@ DRUPAL_ACCOUNT_PASS=vs
 DRUPAL_ACCOUNT_MAIL=pruebaVScuenta@example.com
 ~~~
 La usamos gracias a configMap por un comando el cual es el siguiente: `kubectl create configmap drupal-env-config --from-env-file=.env` .
-- Hemos conseguido implementar las variables del entorno para la configuración de la base de datos. Sin embargo, para el resto de la configuración nos ha dado problemas, los cuales se han intentado solventar hasta el final.
+Con este comando creamos un configMap a raíz de el archivo oculto de entorno de variables que explicamos.
+- Hemos conseguido implementar las variables del entorno para la configuración de la base de datos.
 - Gracias a la profunda investigación que se ha hecho de esto, hemos conseguido dar con la herramienta llamada **Drush** la cual es una herramienta de línea de comandos ampliamente usada para gestionar sitios web basados en Drupal.
-Creemos que con esto se podría implementar las variables del entorno restantes, y así ahorrarnos la instalación web entera de Drupal, pero ha provocado muchos fallos a la hora de implementarlo con Kubernetes.
+Creemos que con esto se podría implementar las variables del entorno restantes, y así hacer una instalación web automatizada de Drupal, pero ha provocado muchos fallos a la hora de implementarlo con Kubernetes. Aún así no tenemos la certeza de que esto fuera cierto, pero intuimos que podría ser.
+***
 
+## Conceptos aprendidos en este entregable
+
+###### Explicación configMap de Kubernetes
+
+Un configmap es un objeto de la API utilizado para almacenar datos no confidenciales en el formato clave-valor. Los Pods pueden utilizar los ConfigMaps como variables de entorno, argumentos de la linea de comandos o como ficheros de configuración en un Volumen.
+
+Un ConfigMap te permite desacoplar la configuración de un entorno específico de una imagen de contenedor, así las aplicaciones son fácilmente portables.
+
+###### Explicación Secrets de Kubernetes
+
+Un Secret es un objeto que contiene una pequeña cantidad de datos confidenciales como contraseñas, un token, o una llave. Tal información podría ser puesta en la especificación de un Pod o en una imagen; poniendolo en un objeto de tipo Secret permite mayor control sobre como se usa, y reduce el riesgo de exposicición accidental.
+
+***
 
 ##### Bibliografía
 
 https://superuser.com/questions/535870/drupal-unable-to-create-files-on-var-www-html-drupal-directory
 https://www.drupal.org/docs/administering-a-drupal-site/troubleshooting-drupal/fix-drupal-clean-urls-problems
 https://kubernetes.io/es/docs/concepts/configuration/configmap/
+https://kubernetes.io/es/docs/concepts/configuration/secret/
 https://www.drush.org/13.x/
 https://hub.docker.com/_/drupal
 https://hub.docker.com/_/mysql
