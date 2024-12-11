@@ -9,7 +9,6 @@ terraform {
 
 provider "docker" {}
 
-
 resource "docker_network" "red_ejercicio" {
   name = "red_entrega"
 }
