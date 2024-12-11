@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drupal-deployment-vs
+spec:
+  selector:
+    matchLabels:
+      app: drupal
+  template:
+    metadata:
+      labels:
+        app: drupal
+    spec:
+      initContainers:
+      - name: init-drupal-setup
+        image: drupal:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          #Crea directorio si no existe
+          if [ ! -d /var/www/html/sites/default/files ]; then
+            mkdir -p /var/www/html/sites/default/files
+          fi
+          #Copia archivo settings.php si no existe
+          if [ ! -f "/var/www/html/sites/default/default.settings.php" ]; then
+            cp /opt/drupal/web/core/assets/scaffold/files/default.settings.php /var/www/html/sites/default/default.settings.php
+          fi
+          #Crea settings.php desde default.settings.php y configuramos variables de entorno de la configuración de la BD
+          if [ ! -f "/var/www/html/sites/default/settings.php" ]; then
+            cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
+
+            echo "Añadiendo configuración automática al settings.php..."
+            cat <<EOL >> /var/www/html/sites/default/settings.php
+
+          \$databases['default']['default'] = array (
+            'database' => getenv('DRUPAL_DB_NAME'),
+            'username' => getenv('DRUPAL_DB_USER'),
+            'password' => getenv('DRUPAL_DB_PASSWORD'),
+            'host' => getenv('DRUPAL_DB_HOST'),
+            'port' => '',
+            'driver' => 'mysql',
+            'prefix' => '',
+          );
+          
+          #Activamos los Trusted Host Settings, para evitar errores en Drupal.
+          \$settings['trusted_host_patterns'] = array(
+            '^.*$', #Aquí tendría que ir los dominios que usaría nuestro sitio web.
+          );
+
+          EOL
+          fi
+
+          chmod 777 -R /var/www/html/sites/default
+        volumeMounts:
+        - name: drupal-data-vs
+          mountPath: /var/www/html/sites/default
+      containers:
+      - name: drupal-vs
+        image: drupal:latest
+        envFrom:
+        - configMapRef:
+            name: drupal-env-config
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: drupal-data-vs
+          mountPath: /var/www/html/sites/default
+      volumes:
+      - name: drupal-data-vs
+        persistentVolumeClaim:
+          claimName: drupal-pvc
