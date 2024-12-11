@@ -9,4 +9,3 @@ variable "dind_container_name" {
   type        = string
   default     = "dind_container"
 }
-

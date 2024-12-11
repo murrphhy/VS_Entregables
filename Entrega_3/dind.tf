@@ -6,6 +6,9 @@ resource "docker_image" "dind_image" {
 resource "docker_container" "dind_container" {
   name  = var.dind_container_name
   image = docker_image.dind_image.image_id
+
+  privileged = true
+
   ports {
     internal = 2376
     external = 2376
