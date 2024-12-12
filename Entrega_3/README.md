@@ -16,18 +16,7 @@ Este documento describe los pasos necesarios para replicar el proceso completo d
 
 ## Pasos para el despliegue
 
-### 1. Crear la imagen personalizada de Jenkins
-
-1. Abrir una terminal y ubicarse en el directorio donde se encuentra el archivo `Dockerfile`.
-2. Construir la imagen personalizada de Jenkins ejecutando el siguiente comando:
-
-   ```bash
-   docker build -t jenkins_entrega3:2.479.2-jdk17 .
-   ```
-
-   Esto crea una imagen basada en `jenkins/jenkins:2.479.2-jdk17` con soporte para Docker CLI y plugins adicionales.
-
-### 2. Configurar y desplegar los contenedores con Terraform
+### 1. Configurar y desplegar los contenedores con Terraform
 
 1. Inicializar Terraform en el directorio del proyecto:
 
@@ -50,7 +39,7 @@ Este documento describe los pasos necesarios para replicar el proceso completo d
    - Confirmar escribiendo `yes` cuando se solicite.
    - Este proceso creará una red, volúmenes y los contenedores de Jenkins y `dind` (Docker-in-Docker).
 
-### 3. Acceder a Jenkins
+### 2. Acceder a Jenkins
 
 1. Abrir un navegador web y acceder a Jenkins utilizando la dirección `http://localhost:8080`.
 2. Durante el primer acceso, Jenkins solicitará una contraseña inicial que se encuentra en el contenedor. Para obtenerla, ejecutar:
@@ -61,29 +50,25 @@ Este documento describe los pasos necesarios para replicar el proceso completo d
 
 3. Copiar y pegar la contraseña en el navegador y seguir el asistente para completar la configuración inicial.
 
-### 4. Configurar Jenkins para usar Docker
-
-1. Instalar el plugin **Docker Pipeline** si no está ya instalado.
-2. Configurar un nuevo nodo:
-   - Ir a `Administrar Jenkins > Configuración del sistema > Nodos y entornos de nube`.
-   - Crear un nuevo nodo con la configuración necesaria para ejecutar tareas de Docker.
-3. Establecer los siguientes parámetros en Jenkins:
-   - `DOCKER_HOST`: `tcp://docker:2376`
-   - `DOCKER_CERT_PATH`: `/certs/client`
-   - `DOCKER_TLS_VERIFY`: `1`
-
-### 5. Verificar el despliegue
+### 3. Verificar el despliegue
 
 1. Crear un pipeline simple en Jenkins para ejecutar comandos Docker.
-2. Asegurarse de que el contenedor Jenkins pueda interactuar con el servicio Docker-in-Docker correctamente.
+   1.1 Click en nuevo artículo (new item).
+   1.2 Seleccionamos pipeline.
+   1.3 Seleccioamos usar un scm.
+   1.4 Cogemos Git.
+   1.5 Copiamos y pegamos la url del repositorio (en nuestro caso el fork).
+   1.6 Cambiamos la rama en la que se aplicará el pipeline (en nuestro caso, main).
+   1.7 Guardamos y le damos a construir. 
+3. Asegurarse de que el contenedor Jenkins pueda interactuar con el servicio Docker-in-Docker correctamente.
 
 ## Archivos importantes
 
 - **Dockerfile**: Define la imagen personalizada de Jenkins.
 - **dind.tf**: Configura el contenedor Docker-in-Docker.
-- **jenkins.tf**: Configura el contenedor de Jenkins y lo conecta con `dind`.
-- **main.tf**: Define los recursos de red y volúmenes necesarios.
-- **variables.tf**: Contiene las variables configurables para el despliegue.
+- **jenkins.tf**: Configura el contenedor de Jenkins.
+- **main.tf**: Define los recursos que van a usar ambos contenedores.
+- **variables.tf**: Contiene las variables que se usarán en los .tf.
 
 ## Limpieza de recursos
 
