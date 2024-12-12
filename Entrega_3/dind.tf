@@ -21,6 +21,12 @@ resource "docker_container" "dind_container" {
     volume_name    = docker_volume.jenkins_data.name
     container_path = "/var/jenkins_home"
   }
+
+  networks_advanced {
+    name    = docker_network.red_ejercicio.name
+    aliases = ["docker"]
+  }
+
   env = [
     "DOCKER_TLS_CERTDIR=/certs"
   ]
